@@ -14,10 +14,10 @@ from credentials import CREDENTIALS
 profiles_list = boto3.Session().available_profiles
 
 # List of regions to process
-regions_list = os.environ.get('AWS_RESERVIST_REGIONS', 'us-east-1,eu-central-1').split(',')
+regions_list = os.environ.get('AWS_INSTANCES_REGIONS', 'us-east-1,eu-central-1').split(',')
 
 # Period between refreshing data from AWS, in seconds
-PERIOD = os.environ.get('AWS_RESERVIST_PERIOD', 15 * 60)
+PERIOD = os.environ.get('AWS_INSTANCES_PERIOD', 15 * 60)
 
 # Define metrics
 
