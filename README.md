@@ -16,10 +16,9 @@ ${EDITOR} credentials.py
 
 # run container
 docker run -d --name aws-instances-exporter \
-  -e AWS_INSTANCES_PERIOD=600 \
-  -e AWS_INSTANCES_REGIONS=us-east-1,eu-central-1 \
+  -e AWS_QUERY_PERIOD=600 \
   -p 4321:8000 \
-  -v $(pwd)/credentials.py:/app/credentials.py \
+  -v ~/.aws/credentials:/root/.aws/credentials \
   --restart unless-stopped \
   agrrh/aws-instances-exporter:dev
 

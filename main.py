@@ -5,19 +5,12 @@ import time
 
 from prometheus_client import start_http_server, Gauge
 
-# TODO use Vault
-from credentials import CREDENTIALS
-
 # Parameters init
 
-# TODO use Vault
 profiles_list = boto3.Session().available_profiles
 
-# List of regions to process
-regions_list = os.environ.get('AWS_INSTANCES_REGIONS', 'us-east-1,eu-central-1').split(',')
-
 # Period between refreshing data from AWS, in seconds
-PERIOD = int(os.environ.get('AWS_INSTANCES_PERIOD', 15 * 60))
+PERIOD = int(os.environ.get('AWS_QUERY_PERIOD', 15 * 60))
 
 # Define metrics
 
@@ -67,7 +60,7 @@ def describe_reserved_instances(aws_client):
 
 # Main business logic
 
-def main(credentials):
+def main():
     """Main business method, gather data and set metrics accordingly.
     """
     ec2_instances = {}
@@ -75,31 +68,29 @@ def main(credentials):
 
     for profile in profiles_list:
         aws_session = boto3.Session(profile_name=profile)
+        aws_client = aws_session.client('ec2')
 
-        for region in regions_list:
-            aws_client = aws_session.client('ec2', region_name=region)
+        # Instances
+        for instance in describe_instances(aws_client):
+            availability_zone = instance.get('Placement', {}).get('AvailabilityZone', 'undefined')
+            type = instance.get('InstanceType')
+            state = instance.get('State', {}).get('Name', 'undefined')
 
-            # Instances
-            for instance in describe_instances(aws_client):
-                availability_zone = instance.get('Placement', {}).get('AvailabilityZone', 'undefined')
-                type = instance.get('InstanceType')
-                state = instance.get('State', {}).get('Name', 'undefined')
+            labels = ','.join((profile, aws_session.region_name, availability_zone, type, state))
 
-                labels = ','.join((profile, region, availability_zone, type, state))
+            ec2_instances[labels] = ec2_instances.get(labels, 0) + 1
+            ec2_instances_metric.labels(profile, aws_session.region_name, availability_zone, type, state).set(ec2_instances[labels])
 
-                ec2_instances[labels] = ec2_instances.get(labels, 0) + 1
-                ec2_instances_metric.labels(profile, region, availability_zone, type, state).set(ec2_instances[labels])
+        # Reserved
+        for reserved in describe_reserved_instances(aws_client):
+            availability_zone = reserved.get('AvailabilityZone', 'undefined')
+            type = reserved.get('InstanceType')
+            state = reserved.get('State')
 
-            # Reserved
-            for reserved in describe_reserved_instances(aws_client):
-                availability_zone = reserved.get('AvailabilityZone', 'undefined')
-                type = reserved.get('InstanceType')
-                state = reserved.get('State')
+            labels = ','.join((profile, aws_session.region_name, availability_zone, type, state))
 
-                labels = ','.join((profile, region, availability_zone, type, state))
-
-                ec2_reserved[labels] = ec2_reserved.get(labels, 0) + 1
-                ec2_reserved_metric.labels(profile, region, availability_zone, type, state).set(ec2_reserved[labels])
+            ec2_reserved[labels] = ec2_reserved.get(labels, 0) + 1
+            ec2_reserved_metric.labels(profile, aws_session.region_name, availability_zone, type, state).set(ec2_reserved[labels])
 
 
 if __name__ == '__main__':
@@ -111,7 +102,6 @@ if __name__ == '__main__':
 
     logging.critical('Starting AWS reservist exporter ...')
     logging.critical('Refresh period is {} sec'.format(PERIOD))
-    logging.critical('Regions: {}'.format(','.join(regions_list)))
     logging.critical('Profiles: {}'.format(','.join(profiles_list)))
 
     start_http_server(8000)
@@ -120,7 +110,7 @@ if __name__ == '__main__':
     iter = 0
     while True:
         t_start = time.time()
-        main(CREDENTIALS)
+        main()
         logging.debug('iter {} done, took {} sec'.format(iter, int(time.time() - t_start)))
         time.sleep(PERIOD)
         iter += 1
