@@ -108,6 +108,7 @@ if __name__ == '__main__':
 
     # Business logic
     iter = 0
+    # FIXME catch SIGINT and others to evade ugly exit messages
     while True:
         t_start = time.time()
         main()
