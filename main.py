@@ -17,7 +17,7 @@ profiles_list = boto3.Session().available_profiles
 regions_list = os.environ.get('AWS_INSTANCES_REGIONS', 'us-east-1,eu-central-1').split(',')
 
 # Period between refreshing data from AWS, in seconds
-PERIOD = os.environ.get('AWS_INSTANCES_PERIOD', 15 * 60)
+PERIOD = int(os.environ.get('AWS_INSTANCES_PERIOD', 15 * 60))
 
 # Define metrics
 
