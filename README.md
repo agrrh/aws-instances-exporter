@@ -4,6 +4,8 @@ Simple exporter to provide AWS instance details.
 
 This is probably better to setup with CloudWatch, but there's always a reason for inventing a bicycle.
 
+[![CircleCI](https://circleci.com/gh/agrrh/aws-instances-exporter.svg?style=svg)](https://circleci.com/gh/agrrh/aws-instances-exporter)
+
 # Usage
 
 ```bash
