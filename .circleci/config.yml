@@ -10,15 +10,14 @@ executors:
       - image: circleci/buildpack-deps:stretch
 
 jobs:
-  build:
+  build-master:
     executor: docker-publisher
     steps:
       - checkout
       - setup_remote_docker
       - run:
           name: Build Docker image
-          command: |
-            docker build -t ${IMAGE_NAME}:latest .
+          command: docker build . -t ${IMAGE_NAME}:latest
       - run:
           name: Archive Docker image
           command: docker save -o image.tar ${IMAGE_NAME}
@@ -27,25 +26,23 @@ jobs:
           paths:
             - ./image.tar
 
-  publish-latest:
+  build-branches:
     executor: docker-publisher
     steps:
-      - attach_workspace:
-          at: /tmp/workspace
+      - checkout
       - setup_remote_docker
       - run:
-          name: Load archived Docker image
-          command: docker load -i /tmp/workspace/image.tar
+          name: Build Docker image
+          command: docker build . -t ${IMAGE_NAME}:${$CIRCLE_BRANCH}
       - run:
-          name: Publish Docker Image to Docker Hub
-          command: |
-            echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
-            IMAGE_TAG="0.0.${CIRCLE_BUILD_NUM}"
-            docker tag ${IMAGE_NAME}:latest ${IMAGE_NAME}:${IMAGE_TAG}
-            docker push ${IMAGE_NAME}:latest
-            docker push ${IMAGE_NAME}:${IMAGE_TAG}
+          name: Archive Docker image
+          command: docker save -o image.tar ${IMAGE_NAME}
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./image.tar
 
-  publish-tag:
+  publish-master:
     executor: docker-publisher
     steps:
       - attach_workspace:
@@ -58,40 +55,46 @@ jobs:
           name: Publish Docker Image to Docker Hub
           command: |
             echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
-            IMAGE_TAG=${CIRCLE_TAG/v/''}
-            docker tag ${IMAGE_NAME}:latest ${IMAGE_NAME}:${IMAGE_TAG}
             docker push ${IMAGE_NAME}:latest
-            docker push ${IMAGE_NAME}:${IMAGE_TAG}
+
+  publish-branches:
+    executor: docker-publisher
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - setup_remote_docker
+      - run:
+          name: Load archived Docker image
+          command: docker load -i /tmp/workspace/image.tar
+      - run:
+          name: Publish Docker Image to Docker Hub
+          command: |
+            echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+            docker push ${IMAGE_NAME}:${$CIRCLE_BRANCH}
 
 workflows:
   version: 2
 
   build-master:
     jobs:
-      - build:
+      - build-master:
           filters:
             branches:
               only: master
-      - publish-latest:
+      - publish-master:
           requires:
-            - build
+            - build-master
           filters:
             branches:
               only: master
 
-  build-tags:
-    jobs:
-      - build:
+      - build-branches:
           filters:
-            tags:
-              only: /^v.*/
             branches:
-              ignore: /.*/
-      - publish-tag:
+              ignore: master
+      - publish-branches:
           requires:
-            - build
+            - build-branches
           filters:
-            tags:
-              only: /^v.*/
             branches:
-              ignore: /.*/
+              ignore: master
