@@ -6,7 +6,7 @@ This is probably better to setup with CloudWatch, but there's always a reason fo
 
 # Usage
 
-```
+```bash
 # build image
 docker build . -t agrrh/aws-instances-exporter:dev
 
