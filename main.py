@@ -109,16 +109,18 @@ if __name__ == '__main__':
         logging_ = logging.getLogger(module_name)
         logging_.setLevel(logging.ERROR)
 
-    logging.critical('Starting AWS reservist exporter')
-    logging.critical('{}'.format({
-        'period': PERIOD,
-        'regions': regions_list,
-
-    }))
+    logging.critical('Starting AWS reservist exporter ...')
+    logging.critical('Refresh period is {} sec'.format(PERIOD))
+    logging.critical('Regions: {}'.format(','.join(regions_list)))
+    logging.critical('Profiles: {}'.format(','.join(profiles_list)))
 
     start_http_server(8000)
 
     # Business logic
+    iter = 0
     while True:
+        t_start = time.time()
         main(CREDENTIALS)
+        logging.debug('iter {} done, took {} sec'.format(iter, int(time.time() - t_start)))
         time.sleep(PERIOD)
+        iter += 1
