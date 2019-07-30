@@ -41,7 +41,8 @@ ec2_reserved_metric = Gauge(
 
 # Helper methods
 
-def describe_instances(aws_client):
+def describe_instances(aws_client, profile):
+    logging.debug('Describe instances for {}'.format(profile))
     try:
         for reservation in aws_client.describe_instances().get('Reservations', []):
             for instance in reservation.get('Instances', []):
@@ -50,7 +51,8 @@ def describe_instances(aws_client):
         logging.error(e)
 
 
-def describe_reserved_instances(aws_client):
+def describe_reserved_instances(aws_client, profile):
+    logging.debug('Describe reserved instances for {}'.format(profile))
     try:
         for reserved in aws_client.describe_reserved_instances().get('ReservedInstances', []):
             yield reserved
@@ -71,7 +73,7 @@ def main():
         aws_client = aws_session.client('ec2')
 
         # Instances
-        for instance in describe_instances(aws_client):
+        for instance in describe_instances(aws_client, profile):
             availability_zone = instance.get('Placement', {}).get('AvailabilityZone', 'undefined')
             type = instance.get('InstanceType')
             state = instance.get('State', {}).get('Name', 'undefined')
@@ -82,7 +84,7 @@ def main():
             ec2_instances_metric.labels(profile, aws_session.region_name, availability_zone, type, state).set(ec2_instances[labels])
 
         # Reserved
-        for reserved in describe_reserved_instances(aws_client):
+        for reserved in describe_reserved_instances(aws_client, profile):
             availability_zone = reserved.get('AvailabilityZone', 'undefined')
             type = reserved.get('InstanceType')
             state = reserved.get('State')
