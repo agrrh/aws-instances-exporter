@@ -1,6 +1,7 @@
 import boto3
 import logging
 import os
+import sys
 import time
 
 from prometheus_client import start_http_server, Gauge
@@ -97,7 +98,10 @@ def main():
 
 if __name__ == '__main__':
     # Configure logging
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        format='%(asctime)s %(name)s %(levelname)s %(message)s',
+        level=logging.DEBUG if '--debug' or '-d' in sys.argv else logging.INFO
+    )
     for module_name in ('urllib3', 'botocore'):
         logging_ = logging.getLogger(module_name)
         logging_.setLevel(logging.ERROR)
