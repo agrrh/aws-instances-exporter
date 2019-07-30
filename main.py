@@ -49,7 +49,7 @@ def describe_instances(aws_client, profile):
             for instance in reservation.get('Instances', []):
                 yield instance
     except Exception as e:
-        logging.error(e)
+        logging.error('Profile "{}" exception: "{}"'.format((profile, e)))
 
 
 def describe_reserved_instances(aws_client, profile):
@@ -58,7 +58,7 @@ def describe_reserved_instances(aws_client, profile):
         for reserved in aws_client.describe_reserved_instances().get('ReservedInstances', []):
             yield reserved
     except Exception as e:
-        logging.error(e)
+        logging.error('Profile "{}" exception: "{}"'.format((profile, e)))
 
 
 # Main business logic
