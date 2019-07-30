@@ -1,7 +1,7 @@
+import argparse
 import boto3
 import logging
 import os
-import sys
 import time
 
 from prometheus_client import start_http_server, Gauge
@@ -41,6 +41,12 @@ ec2_reserved_metric = Gauge(
 
 
 # Helper methods
+
+def args_parse():
+    parser = argparse.ArgumentParser(description='AWS instances exporter')
+    parser.add_argument('-d', '--debug', action='store_true', help='Enable debug output')
+    return parser.parse_args()
+
 
 def describe_instances(aws_client, profile):
     logging.debug('Describe instances for {}'.format(profile))
@@ -97,10 +103,12 @@ def main():
 
 
 if __name__ == '__main__':
+    args = args_parse()
+
     # Configure logging
     logging.basicConfig(
         format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        level=logging.DEBUG if '--debug' or '-d' in sys.argv else logging.INFO
+        level=logging.DEBUG if args.debug else logging.INFO
     )
     for module_name in ('urllib3', 'botocore'):
         logging_ = logging.getLogger(module_name)
