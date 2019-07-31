@@ -87,6 +87,7 @@ def main():
 
             labels = ','.join((profile, aws_session.region_name, availability_zone, type, state))
 
+            # FIXME this causing variable growing from 0 to actual value, should be fixed by directly setting actual value
             ec2_instances[labels] = ec2_instances.get(labels, 0) + 1
             ec2_instances_metric.labels(profile, aws_session.region_name, availability_zone, type, state).set(ec2_instances[labels])
 
@@ -98,6 +99,7 @@ def main():
 
             labels = ','.join((profile, aws_session.region_name, availability_zone, type, state))
 
+            # FIXME this causing variable growing from 0 to actual value, should be fixed by directly setting actual value
             ec2_reserved[labels] = ec2_reserved.get(labels, 0) + 1
             ec2_reserved_metric.labels(profile, aws_session.region_name, availability_zone, type, state).set(ec2_reserved[labels])
 
