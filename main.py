@@ -99,10 +99,10 @@ def main():
 
             ec2_reserved[labels] = ec2_reserved.get(labels, 0) + 1
 
-    for labels, metric in ec2_instances:
+    for labels, metric in ec2_instances.items():
         ec2_instances_metric.labels(*labels.split(',')).set(metric)
 
-    for labels, metric in ec2_reserved:
+    for labels, metric in ec2_reserved.items():
         ec2_reserved_metric.labels(*labels.split(',')).set(metric)
 
 
